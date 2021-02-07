@@ -52,21 +52,21 @@ object HeaderKey {
     * their values with a comma.  See RFC 2616, Section 4.2.
     */
   trait Recurring extends Extractable {
-    type HeaderT <: Header
+    type HeaderT <: Header.Recurring
 
-    def apply[A](values: NonEmptyList[A])(implicit ev: Header.Recurring.Carrier.Aux[HeaderT, A]): HeaderT
+    def apply(values: NonEmptyList[HeaderT#Value]): HeaderT
 
-    def apply[A](first: A, more: A*)(implicit ev: Header.Recurring.Carrier.Aux[HeaderT, A]): HeaderT =
+    def apply(first: HeaderT#Value, more: HeaderT#Value*): HeaderT =
       apply(NonEmptyList(first, more.toList))
 
-    def from(headers: Headers)(implicit ev: Header.Recurring.Carrier[HeaderT]): Option[HeaderT] = {
+    def from(headers: Headers): Option[HeaderT] = {
       @tailrec def loop(
           hs: Headers,
-          acc: NonEmptyList[ev.Val]): NonEmptyList[ev.Val] =
+          acc: NonEmptyList[HeaderT#Value]): NonEmptyList[HeaderT#Value] =
         if (hs.nonEmpty)
           matchHeader(hs.toList.head) match {
             case Some(header) =>
-              loop(Headers(hs.toList.tail), acc.concatNel(ev.ev(header).values.widen[ev.Val]))
+              loop(Headers(hs.toList.tail), acc.concatNel(header.values.widen[HeaderT#Value]))
             case None =>
               loop(Headers(hs.toList.tail), acc)
           }
@@ -75,7 +75,7 @@ object HeaderKey {
         if (hs.nonEmpty)
           matchHeader(hs.toList.head) match {
             case Some(header) =>
-              Some(apply[ev.Val](loop(Headers(hs.toList.tail), ev.ev(header).values.widen[ev.Val]))(ev))
+              Some(apply(loop(Headers(hs.toList.tail), header.values.widen[HeaderT#Value])))
             case None => start(Headers(hs.toList.tail))
           }
         else None
