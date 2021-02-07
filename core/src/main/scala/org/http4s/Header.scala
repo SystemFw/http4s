@@ -106,6 +106,19 @@ object Header {
     type Value
     def values: NonEmptyList[Value]
   }
+  object Recurring {
+    trait Carrier[A] {
+      type Val
+      def ev: A <:< Recurring { type Value = Val}
+    }
+    object Carrier {
+      type Aux[A, B] = Carrier[A] { type Val = B }
+
+    }
+
+    
+
+  }
 
   /** Simple helper trait that provides a default way of rendering the value */
   trait RecurringRenderable extends Recurring {
